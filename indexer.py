@@ -51,7 +51,7 @@ def create_index(directory):
     master_index = {}
 
     files = get_files(directory,'txt')
-    print("Inlästa filer: ",files)
+    print("Inlästa filer: ",files, "\n\n")
 
     for f in files:
         f_o = open(directory + "/" + f, "r")
@@ -98,6 +98,7 @@ def tfidf(freq_of_word, freq_all_words, tot_nbr_docs, docs_with_word): #p. 172 i
 def calculate_vectors(): #behöver inte index, anänvd master index ist?
     master_index = load_obj("master_index")
     files = get_files(".", "pkl")
+    files.remove("master_index.pkl") #we don't want master index to be interpreted as a corpus text, therefore we remove it (blir fel get_matrix() funktionen annars)
     file_info = {f.replace("pkl", "txt") : load_obj(f) for f in files} #create a dict with key = filename, value = {word : occurences in current file}
     vectors = {f.replace("pkl", "txt") : {} for f in files} #create dict with key = filename, value = {}
     vector_files = {}
@@ -139,10 +140,25 @@ def get_matrix():
     """
     Compares all documents an returns the results in a matrix
     """
-    pass
+    vectors = calculate_vectors()
+    length = len(vectors)
+    matrix = np.identity(length)
+    files = list(vectors.keys())
+    #hämta dokumenten
+    for i in range(length):
+        print(i+1, ". ", files[i]) #print index for each file
+        for j in range(length):
+            #jämför dokument i med dokument j och räkna ut deras cosine siilarity -> fyll upp matrisen plats (i,j) med detta värde
+            di = list(vectors[files[i]].values()) #för att få dokument di och dj på rätt format
+            dj = list(vectors[files[j]].values())
+            matrix[i][j] = cosine_similarity(di, dj)
+
+    #TODO kanske ska printa en lista på vilka som är mest lika, näst mest lika osv ..? (plus, hur vetjag att resultatet vi får med nuvarande kod stämmer?)
+    np.set_printoptions(precision=2, suppress=True) #så matrisen blir lättare att läsa
+    print("\n\n", matrix)
 
 if __name__ == '__main__':
     create_index(sys.argv[1])
     #print(tfidf(1,2,3,4))
-    calculate_vectors()
+    #calculate_vectors()
     get_matrix()
