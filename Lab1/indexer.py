@@ -189,28 +189,11 @@ def get_matrix(v):
 
 
 if __name__ == '__main__':
-    create_index("Selma")
-    # print(tfidf(1,2,3,4))
+    try:
+        folder = sys.argv[1]
+    except:
+        print("Usage: python indexer.py <folder_with_textfiles>")
+        exit(-1)
+    create_index(folder)
     v = calculate_vectors()
-
-    # Test
-    #print(v['bannlyst.txt']['känna'])
-    #print(v['bannlyst.txt']['gås'])
-    #print(v['bannlyst.txt']['nils'])
-    #print(v['bannlyst.txt']['et'])
-
-    #print(v['herrgard.txt']['känna'])
-    #print(v['herrgard.txt']['gås'])
-    #print(v['herrgard.txt']['nils'])
-    #print(v['herrgard.txt']['et'])
-
-    #print(v['jerusalem.txt']['känna'])
-    #print(v['jerusalem.txt']['gås'])
-    #print(v['jerusalem.txt']['nils'])
-    #print(v['jerusalem.txt']['et'])
-
-    # print(v['nils.txt']['känna'])
-    # print(v['nils.txt']['gås'])
-    # print(v['nils.txt']['nils'])
-    # print(v['nils.txt']['et'])
     get_matrix(v)
