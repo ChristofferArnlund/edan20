@@ -47,10 +47,19 @@ def tokenize3(text):
 def tokenize4(text):
     """uses the punctuation and symbols to break the text into words
     returns a list of words"""
-    spaced_tokens = re.sub('([\p{S}\p{P}])', r' \1 ', text)
-    one_token_per_line = re.sub('\s+', '\n', spaced_tokens)
-    tokens = one_token_per_line.split()
-    return tokens
+    #spaced_tokens = re.sub('([\p{S}\p{P}])', r' \1 ', text)
+    #print(spaced_tokens)
+    text_without_newlines = re.sub('\n', '', text)
+    one_sentences = re.findall('[\S\s]*?\.', text_without_newlines) #pattern: '\.\s+[A-Z]' eller [A-Z]+[^.]*\.
+    new_text = ''
+    count = 0
+    for s in one_sentences:
+        count += 1
+        new_text += '<s>' + s[:-1].lower() + ' </s>\n'
+    #tokens = one_token_per_line.split()
+    print(new_text)
+    print("count: ", count)
+    return new_text
 
 
 if __name__ == '__main__':
@@ -61,4 +70,4 @@ if __name__ == '__main__':
     words = tokenize2(text)
     print(words)"""
     words = tokenize4(text)
-print(words)
+#print(words)
