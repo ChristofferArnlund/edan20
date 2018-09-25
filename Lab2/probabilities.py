@@ -10,7 +10,7 @@ def tokenize(text):
     # words = re.split('[\s\-,;:!?.’\'«»()–...&‘’“”*—]+', text)
     # words = re.split('[^a-zåàâäæçéèêëîïôöœßùûüÿA-ZÅÀÂÄÆÇÉÈÊËÎÏÔÖŒÙÛÜŸ’\-]+', text)
     # words = re.split('\W+', text)
-    words = re.findall('[\S]+', text)
+    words = re.findall('\<s\>|\p{L}+|\<\/s\>', text)
 
     return words
 
@@ -22,12 +22,14 @@ def makeSentences(text):
     #spaced_tokens = re.sub('([\p{S}\p{P}])', r' \1 ', text)
     #print(spaced_tokens)
     text_without_newlines = re.sub('\n|\t', ' ', text)
-    one_sentences = re.findall('[\S\s]*?[\.|\?]', text_without_newlines) #pattern: '\.\s+[A-Z]' eller [A-Z]+[^.]*\.
     new_text = list()
+    one_sentences = re.findall('[\S\s]*?[\.|\?]', text_without_newlines) #pattern: '\.\s+[A-Z]' eller [A-Z]+[^.]*\. eller \p{Lu}+[^.|!|?]* eller [\S\s]*?[\.|\?]
     count = 0
     for s in one_sentences:
         count += 1
-        new_text.append(' <s>' + s[:-1].lower() + ' </s>')
+        w = s.lower()
+        #print(w)
+        new_text.append(' <s>' + w + ' </s>') #s[:-1].lower()
     #tokens = one_token_per_line.split()
     #print(new_text)
     #print("count: ", count)
@@ -79,7 +81,7 @@ def unigramModel(words, uniFreq):
     print(close_tag, '\t', uniFreq[close_tag], "\t", len(close_tag), "\t", prob)
     print("=====================================================")
 
-    geo_prob = math.pow(unigramProb, 1 / (len(testSentence) - 1));
+    geo_prob = math.pow(unigramProb, 1 / (len(testSentence) - 1))
     entropy_rate = -H / (len(testSentence) - 1)
     print("Prob. unigrams: " + str(unigramProb))
     print("Geometric mean prob.: " + str(geo_prob))
@@ -92,7 +94,7 @@ def bigramModel(words,uniFreq):
     print("\n\nBigram Model")
     print("=====================================================")
 
-    print("w_i       C(w_i)     #words        P(w_i)")  # The unigram model
+    print("w_i   w_i+1    C(w_i)     #words        P(w_i)")  # The unigram model
     print("=====================================================")
 
     bigramFreq = count_bigrams(words)
