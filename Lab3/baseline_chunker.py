@@ -50,7 +50,7 @@ def train(corpus):
                 chunk_dist[tmp_pos][tmp_chunk]=1
 
 
-    # We determine the best association
+
 
     """
     Fill in code so that for each part of speech, you select the most frequent chunk.

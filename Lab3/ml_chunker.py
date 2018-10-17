@@ -14,7 +14,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import GridSearchCV
 
 
-def extract_features(sentences, w_size, feature_names,extra):
+def extract_features(sentences, w_size, feature_names):
     """
     Builds X matrix and y vector
     X is a list of dictionaries and y is a list
@@ -26,13 +26,13 @@ def extract_features(sentences, w_size, feature_names,extra):
     y_l = []
     for sentence in sentences:
 
-        X, y = extract_features_sent(sentence, w_size, feature_names,extra)
+        X, y = extract_features_sent(sentence, w_size, feature_names)
         X_l.extend(X)
         y_l.extend(y)
     return X_l, y_l
 
 
-def extract_features_sent(sentence, w_size, feature_names,extra):
+def extract_features_sent(sentence, w_size, feature_names):
     """
     Extract the features from one sentence
     returns X and y, where X is a list of dictionaries and
@@ -53,22 +53,11 @@ def extract_features_sent(sentence, w_size, feature_names,extra):
     # Each sentence is a list of rows
     sentence = sentence.splitlines()
     padded_sentence = list()
-    index1=0
     for line in sentence:
         line = line.split()
-        if extra is not None:
-            if index1 == 0:
-                line.append('BOS')
-                line.append('BOS')
-            elif index1 == 1:
-                line.append('BOS')
-                line.append(extra[index1 - 1])
-            else:
-                line.append(extra[index1-2])
-                line.append(extra[index1-1])
 
         padded_sentence.append(line)
-        index1+=1
+
 
     # print(padded_sentence)
 
@@ -87,12 +76,6 @@ def extract_features_sent(sentence, w_size, feature_names,extra):
         for j in range(2 * w_size + 1):
             tmp = padded_sentence[i + j][1]
             x.append(tmp)
-        # The chunks (Up to the word)
-        if extra is not None:
-                tmp3 = padded_sentence[i][3]
-                tmp4 = padded_sentence[i][4]
-                x.append(tmp3)
-                x.append(tmp4)
         """
         for j in range(w_size):
             feature_line.append(padded_sentence[i + j][2])
@@ -106,14 +89,18 @@ def extract_features_sent(sentence, w_size, feature_names,extra):
     #    del x['word']
     return X, y
 
-
-def predict(test_sentences, feature_names, f_out,extra):
+def predict(test_sentences, feature_names, f_out):
     for test_sentence in test_sentences:
-        X_test_dict, y_test = extract_features_sent(test_sentence, w_size, feature_names,extra)
+        X_test_dict, y_test = extract_features_sent(test_sentence, w_size, feature_names)
         # Vectorize the test sentence and one hot encoding
         X_test = vec.transform(X_test_dict)
         # Predicts the chunks and returns numbers
-        y_test_predicted = classifier.predict(X_test)
+        y_test_predicted=[]
+        for x in X_test:
+
+            y_temp = classifier.predict(x)
+            y_test_predicted.append(y_temp[0])
+
         # Appends the predicted chunks as a last column and saves the rows
         rows = test_sentence.splitlines()
         rows = [rows[i] + ' ' + y_test_predicted[i] for i in range(len(rows))]
@@ -129,19 +116,18 @@ if __name__ == '__main__':
     test_corpus = 'test.txt'
     w_size = 2  # The size of the context window to the left and right of the word
     feature_names = ['word_n2', 'word_n1', 'word', 'word_p1', 'word_p2',
-                     'pos_n2', 'pos_n1', 'pos', 'pos_p1', 'pos_p2']
+                     'pos_n2', 'pos_n1', 'pos', 'pos_p1', 'pos_p2','c-2','c-1']
+
 
     train_sentences = conll_reader.read_sentences(train_corpus)
 
     print("Extracting the features...")
-    X_dict, y = extract_features(train_sentences, w_size, feature_names,None)
+    X_dict, y = extract_features(train_sentences, w_size, feature_names)
 
     print("Encoding the features...")
     # Vectorize the feature matrix and carry out a one-hot encoding
     vec = DictVectorizer(sparse=True)
     X = vec.fit_transform(X_dict)
-    # The statement below will swallow a considerable memory
-    # X = vec.fit_transform(X_dict).toarray()
     # print(vec.get_feature_names())
 
     training_start_time = time.clock()
@@ -152,28 +138,10 @@ if __name__ == '__main__':
     #decision tree:
     #classifier = tree.DecisionTreeClassifier()
     model = classifier.fit(X, y)
+
     print(model)
 
     y_train_predicted = classifier.predict(X)
-    #train everything again but with added y's from previous prediction
-
-    print("Extracting the features with Extra column...")
-
-    feature_names2 = ['word_n2', 'word_n1', 'word', 'word_p1', 'word_p2',
-                     'pos_n2', 'pos_n1', 'pos', 'pos_p1', 'pos_p2','c-2','c-1']
-
-    X_dict2, y2 = extract_features(train_sentences, w_size, feature_names2, y_train_predicted)
-
-    X2 = vec.fit_transform(X_dict2)
-
-    print("Training the model...")
-    #lassifier2 = linear_model.LogisticRegression(penalty='l2', dual=True, solver='liblinear')
-    #classifier2 = tree.DecisionTreeClassifier()
-    model2 = classifier.fit(X2, y2)
-
-    print("Predicting the model2...")
-    y_train_predicted2 = classifier.predict(X2)
-
 
     test_start_time = time.clock()
     # We apply the model to the test set
@@ -182,21 +150,13 @@ if __name__ == '__main__':
     # Here we carry out a chunk tag prediction and we report the per tag error
     # This is done for the whole corpus without regard for the sentence structure
     print("Predicting the chunks in the test set...")
-    X_test_dict, y_test = extract_features(test_sentences, w_size, feature_names, None)
+    X_test_dict, y_test = extract_features(test_sentences, w_size, feature_names)
     # Vectorize the test set and one-hot encoding
     X_test = vec.transform(X_test_dict)
     y_test_predicted = classifier.predict(X_test)
 
 
-    #predict a second time
 
-    X_test_dict2, y_test2 = extract_features(test_sentences, w_size, feature_names2, y_test_predicted)
-    # Vectorize the test set and one-hot encoding
-    X_test2 = vec.transform(X_test_dict2)  # Possible to add: .toarray()
-    y_test_predicted2 = classifier.predict(X_test2)
-
-    print("Classification report for classifier %s:\n%s\n"
-          % (classifier, metrics.classification_report(y_test, y_test_predicted2)))
 
     # Here we tag the test set and we save it.
     # This prediction is redundant with the piece of code above,
@@ -204,7 +164,7 @@ if __name__ == '__main__':
     # corpus structure
     print("Predicting the test set...")
     f_out = open('out', 'w')
-    predict(test_sentences, feature_names2, f_out,y_test_predicted2)
+    predict(test_sentences, feature_names, f_out)
 
     end_time = time.clock()
     print("Training time:", (test_start_time - training_start_time) / 60)
